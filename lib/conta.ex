@@ -24,11 +24,13 @@ defmodule Conta do
     cond do
       valida_saldo(de.saldo, valor) -> {:error, "Saldo insuficiente!!!"}
       true ->
-          busca_contas()
-        # para = busca_por_email(para.usuario.email)
-        # de = %Conta{de | saldo: de.saldo - valor}
-        # para = %Conta{para | saldo: para.saldo + valor}
-        # [de, para]
+        contas = busca_contas()
+        contas = List.delete contas, de
+        contas = List.delete contas, para
+        de = %Conta{de | saldo: de.saldo - valor}
+        para = %Conta{para | saldo: para.saldo + valor}
+        contas = contas ++ [de, para]
+        File.write(@contas, :erlang.term_to_binary(contas))
     end
   end
 
@@ -36,7 +38,11 @@ defmodule Conta do
     cond do
       valida_saldo(conta.saldo, valor) -> {:error, "Saldo insuficiente!!!"}
       true ->
+        contas = busca_contas()
+        contas = List.delete contas, conta
         conta = %Conta{conta | saldo: conta.saldo - valor}
+        contas = contas ++ [conta]
+        File.write(@contas, :erlang.term_to_binary(contas))
         {:ok, conta, "mensagem de email encaminhada"}
     end
   end
