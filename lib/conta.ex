@@ -20,26 +20,30 @@ defmodule Conta do
   def busca_por_email(email), do: Enum.find(busca_contas(), &(&1.usuario.email == email))
 
   def transferir(de, para, valor) do
-    de = busca_por_email(de.usuario.email)
+    de = busca_por_email(de)
+    para = busca_por_email(para)
     cond do
       valida_saldo(de.saldo, valor) -> {:error, "Saldo insuficiente!!!"}
       true ->
-        contas = busca_contas()
-        contas = List.delete contas, de
-        contas = List.delete contas, para
+        contas = Conta.deletar([de, para])
         de = %Conta{de | saldo: de.saldo - valor}
         para = %Conta{para | saldo: para.saldo + valor}
         contas = contas ++ [de, para]
+        Transacao.gravar("transferencia", de.usuario.email, valor, Date.utc_today(), para.usuario.email)
         File.write(@contas, :erlang.term_to_binary(contas))
     end
   end
 
+  def deletar(contas_deletar) do
+    Enum.reduce(contas_deletar, busca_contas(), fn c, acc -> List.delete(acc, c) end)
+  end
+
   def sacar(conta, valor) do
+    conta = busca_por_email(conta)
     cond do
       valida_saldo(conta.saldo, valor) -> {:error, "Saldo insuficiente!!!"}
       true ->
-        contas = busca_contas()
-        contas = List.delete contas, conta
+        contas = Conta.deletar([conta])
         conta = %Conta{conta | saldo: conta.saldo - valor}
         contas = contas ++ [conta]
         File.write(@contas, :erlang.term_to_binary(contas))
