@@ -9,9 +9,16 @@ defmodule Transacao do
      File.write(@transacoes, :erlang.term_to_binary(transacoes))
   end
 
-  def busca_todas(), do: busca_transacoes()
-  def busca_por_ano(ano), do: Enum.filter(busca_transacoes(), &(&1.data.year == ano))
-  def busca_por_mes(ano, mes), do: Enum.filter(busca_transacoes(), &(&1.data.year == ano && &1.data.month == mes))
+  def todas(), do: busca_transacoes()
+  def por_ano(ano), do: Enum.filter(todas(), &(&1.data.year == ano))
+  def por_mes(ano, mes), do: Enum.filter(todas(), &(&1.data.year == ano && &1.data.month == mes))
+  def por_dia(data), do: Enum.filter(todas(), &(&1.data == data) )
+
+    def calcular_mes(ano, mes), do: calcular(por_mes(ano, mes))
+
+    def calcular(transacoes) do
+      Enum.reduce(transacoes, 0, fn x, acc -> acc + x.valor end)
+    end
 
     defp busca_transacoes() do
       {:ok, binario} = File.read(@transacoes)
